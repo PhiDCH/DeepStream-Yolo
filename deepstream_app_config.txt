@@ -27,11 +27,11 @@ gpu-id=0
 nvbuf-memory-type=0
 
 [sink1]
-enable=0
-type=3
+enable=1
+type=1
 container=1
 codec=1
-enc-type=1    # 0 for GPU nvenc, 1 for CPU encode 
+enc-type=0    # 0 for GPU nvenc, 1 for CPU encode 
 sync=0
 bitrate=4000000
 profile=0
@@ -69,6 +69,14 @@ gpu-id=0
 gie-unique-id=1
 nvbuf-memory-type=0
 config-file=config_infer_primary_yoloV7.txt
+infer-raw-output-dir=output
+bbox-border-color0= 0;0;0;1
+bbox-border-color1= 1;1;0;1
+bbox-border-color2= 1;0.64;0;1
+bbox-border-color3= 0.9;0.9;1;1
+bbox-border-color4= 0.5;0;0.5;1
+bbox-border-color5= 0;1;0;1
+raw-output-file-write=1
 
 [tests]
 file-loop=0
