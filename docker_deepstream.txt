@@ -1,0 +1,10 @@
+xhost +
+
+docker run --gpus all -it --rm --net=host --privileged -v /home/robotic/Downloads/deepstream/DeepStream-Yolo:/opt/nvidia/deepstream/deepstream-6.1/sources/DeepStream-Yolo -e DISPLAY=$DISPLAY -w /opt/nvidia/deepstream/deepstream-6.1 nvcr.io/nvidia/deepstream:6.1.1-devel
+
+/opt/nvidia/deepstream/deepstream/user_additional_install.sh
+
+cd sources/DeepStream-Yolo
+CUDA_VER=11.7 make -C nvdsinfer_custom_impl_Yolo
+
+deepstream-app -c deepstream_app_config.txt

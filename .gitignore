@@ -1,0 +1,9 @@
+*.mp4
+
+*.pt
+*.cfg
+*.wts
+*.engine
+
+*.o
+*.so

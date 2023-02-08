@@ -2,14 +2,14 @@
 gpu-id=0
 net-scale-factor=0.0039215697906911373
 model-color-format=0
-custom-network-config=yolov7.cfg
-model-file=yolov7.wts
-model-engine-file=model_b1_gpu0_fp32.engine
+custom-network-config=model/yolov7-best.cfg
+model-file=model/yolov7-best.wts
+model-engine-file=model/yolov7-best.engine
 #int8-calib-file=calib.table
 labelfile-path=labels.txt
 batch-size=1
 network-mode=0
-num-detected-classes=80
+num-detected-classes=6
 interval=0
 gie-unique-id=1
 process-mode=1
@@ -21,7 +21,38 @@ parse-bbox-func-name=NvDsInferParseYolo
 custom-lib-path=nvdsinfer_custom_impl_Yolo/libnvdsinfer_custom_impl_Yolo.so
 engine-create-func-name=NvDsInferYoloCudaEngineGet
 
-[class-attrs-all]
-nms-iou-threshold=0.45
-pre-cluster-threshold=0.25
-topk=300
+# [class-attrs-all]
+# nms-iou-threshold=0.7
+# pre-cluster-threshold=0.95
+# topk=150
+
+## Per class configurations
+[class-attrs-0]
+topk=150
+nms-iou-threshold=0.7
+pre-cluster-threshold=0.9
+
+[class-attrs-1]
+topk=150
+nms-iou-threshold=0.7
+pre-cluster-threshold=0.9
+
+[class-attrs-2]
+topk=150
+nms-iou-threshold=0.7
+pre-cluster-threshold=0.9
+
+[class-attrs-3]
+topk=150
+nms-iou-threshold=0.7
+pre-cluster-threshold=0.9
+
+[class-attrs-4]
+topk=150
+nms-iou-threshold=0.7
+pre-cluster-threshold=0.5
+
+[class-attrs-5]
+topk=150
+nms-iou-threshold=0.7
+pre-cluster-threshold=0.5
