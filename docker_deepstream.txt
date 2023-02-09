@@ -1,6 +1,6 @@
 xhost +
 
-docker run --gpus all -it --rm --net=host --privileged -v /home/robotic/Downloads/deepstream/DeepStream-Yolo:/opt/nvidia/deepstream/deepstream-6.1/sources/DeepStream-Yolo -e DISPLAY=$DISPLAY -w /opt/nvidia/deepstream/deepstream-6.1 nvcr.io/nvidia/deepstream:6.1.1-devel
+docker run --gpus all -it --rm --net=host --privileged -v /home/robotic/Downloads/deepstream/DeepStream-Yolo:/opt/nvidia/deepstream/deepstream-6.1/sources/DeepStream-Yolo -v /home/robotic/Downloads/deepstream/deepstream_python_apps:/opt/nvidia/deepstream/deepstream-6.1/sources/deepstream_python_apps -e DISPLAY=$DISPLAY -w /opt/nvidia/deepstream/deepstream-6.1 nvcr.io/nvidia/deepstream:6.1.1-devel
 
 /opt/nvidia/deepstream/deepstream/user_additional_install.sh
 
