@@ -66,8 +66,6 @@ nvbuf-memory-type=0
 
 [primary-gie]
 enable=1
-gpu-id=0
-gie-unique-id=1
 nvbuf-memory-type=0
 config-file=config_infer_primary_yoloV7.txt
 bbox-border-color0= 0;0;0;1
