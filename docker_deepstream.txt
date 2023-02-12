@@ -6,9 +6,15 @@ docker run --gpus all -it --rm --net=host --privileged -v /home/robotic/Download
 
 wget https://github.com/NVIDIA-AI-IOT/deepstream_python_apps/releases/download/v1.1.4/pyds-1.1.4-py3-none-linux_x86_64.whl
 pip3 install pyds-1.1.4-py3-none-linux_x86_64.whl
+pip3 install numpy 
 export CUDA_VER=11.7
 
 cd sources/DeepStream-Yolo
-CUDA_VER=11.7 make -C nvdsinfer_custom_impl_Yolo
 
-deepstream-app -c deepstream_app_config.txt
+export CUDA_VER=11.7
+cp nvdsinfer_custombboxparser.cpp /opt/nvidia/deepstream/deepstream-6.1/sources/libs/nvdsinfer_customparser/
+cd /opt/nvidia/deepstream/deepstream-6.1/sources/libs/nvdsinfer_customparser
+make 
+
+cd /opt/nvidia/deepstream/deepstream-6.1/sources/DeepStream-Yolo
+

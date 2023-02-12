@@ -1,0 +1,158 @@
+{
+    "rack_1": {
+        "id": 1200,
+        "num_shelves": 4,
+        "num_all_placeholders": 48,
+        "information": [
+            {
+                "shelf_1": {
+                    "cols": 6,
+                    "rows": 2,
+                    "top": 0,
+                    "bottom": 0.27685
+                }
+            },
+            {
+                "shelf_2": {
+                    "cols": 6,
+                    "rows": 2,
+                    "top": 0.27685,
+                    "bottom": 0.44463
+                }
+            },
+            {
+                "shelf_3": {
+                    "cols": 6,
+                    "rows": 2,
+                    "top": 0.44463,
+                    "bottom": 0.59899
+                }
+            },
+            {
+                "shelf_4": {
+                    "cols": 6,
+                    "rows": 2,
+                    "top": 0.59899,
+                    "bottom": 0.75392
+                }
+            }
+        ]
+    },
+    "rack_2": {
+        "id": 1205,
+        "num_shelves": 4,
+        "num_all_placeholders": 39,
+        "information": [
+            {
+                "shelf_1": {
+                    "cols": 3,
+                    "rows": 3,
+                    "top": 0,
+                    "bottom": 0.24691
+                }
+            },
+            {
+                "shelf_2": {
+                    "cols": 3,
+                    "rows": 3,
+                    "top": 0.24691,
+                    "bottom": 0.54938
+                }
+            },
+            {
+                "shelf_3": {
+                    "cols": 3,
+                    "rows": 3,
+                    "top": 0.54938,
+                    "bottom": 0.74280
+                }
+            },
+            {
+                "shelf_4": {
+                    "cols": 4,
+                    "rows": 3,
+                    "top": 0.74280,
+                    "bottom": 0.92783
+                }
+            }
+        ]
+    },
+    "rack_3": {
+        "id": 1210,
+        "num_shelves": 3,
+        "num_all_placeholders": 6,
+        "information": [
+            {
+                "shelf_1": {
+                    "cols": 1,
+                    "rows": 2,
+                    "top": 0,
+                    "bottom": 0.07805
+                }
+            },
+            {
+                "shelf_2": {
+                    "cols": 1,
+                    "rows": 2,
+                    "top": 0.07805,
+                    "bottom": 0.34146
+                }
+            },
+            {
+                "shelf_3": {
+                    "cols": 1,
+                    "rows": 2,
+                    "top": 0.34146,
+                    "bottom": 0.68536
+                }
+            }
+        ]
+    },
+    "rack_4": {
+        "id": 1215,
+        "num_shelves": 5,
+        "num_all_placeholders": 16,
+        "information": [
+            {
+                "shelf_1": {
+                    "cols": 2,
+                    "rows": 2,
+                    "top": 0,
+                    "bottom": 0.15288
+                }
+            },
+            {
+                "shelf_2": {
+                    "cols": 1,
+                    "rows": 2,
+                    "top": 0.15288,
+                    "bottom": 0.33633
+                }
+            },
+            {
+                "shelf_3": {
+                    "cols": 2,
+                    "rows": 2,
+                    "top": 0.33633,
+                    "bottom": 0.53237
+                }
+            },
+            {
+                "shelf_4": {
+                    "cols": 2,
+                    "rows": 2,
+                    "top": 0.53237,
+                    "bottom": 0.71942
+                }
+            },
+            {
+                "shelf_5": {
+                    "cols": 1,
+                    "rows": 2,
+                    "top": 0.71942,
+                    "bottom": 0.87410
+                }
+            }
+        ]
+    }
+}

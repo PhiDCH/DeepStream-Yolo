@@ -2,5 +2,5 @@ rack_1
 rack_2
 rack_3
 rack_4
-klt_empty
-klt_full
+klt_box_empty
+klt_box_full
