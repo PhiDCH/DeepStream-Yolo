@@ -1,9 +1,12 @@
 *.mp4
+*.png
+*.jpg
 
 *.pt
 *.cfg
 *.wts
 *.engine
+*.onnx
 
 *.o
 *.so
