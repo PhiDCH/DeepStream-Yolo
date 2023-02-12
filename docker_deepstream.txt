@@ -7,6 +7,9 @@ docker run --gpus all -it --rm --net=host --privileged -v /home/robotic/Download
 wget https://github.com/NVIDIA-AI-IOT/deepstream_python_apps/releases/download/v1.1.4/pyds-1.1.4-py3-none-linux_x86_64.whl
 pip3 install pyds-1.1.4-py3-none-linux_x86_64.whl
 pip3 install numpy 
+pip3 install opencv-python
+pip3 install scikit-learn
+pip3 install tqdm    
 export CUDA_VER=11.7
 
 cd sources/DeepStream-Yolo

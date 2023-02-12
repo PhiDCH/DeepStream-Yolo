@@ -33,6 +33,9 @@ from copy import deepcopy
 IMAGE_HEIGHT = 720
 IMAGE_WIDTH = 1280
 
+live_stream = True
+use_v4 = True  # False to use v7
+
 def bus_call(bus, message, loop):
     t = message.type
     if t == Gst.MessageType.EOS:
@@ -178,6 +181,8 @@ def osd_sink_pad_buffer_probe(pad, info, u_data):
 
             cls_id = obj_meta.class_id
             obj_meta.text_params.display_text = ("")
+            obj_meta.text_params.font_params.font_color.set(1.0,1.0,1.0,0.0)
+            obj_meta.text_params.text_bg_clr.set(0.0,0.0,0.0,0.0)
             
             if cls_id == 0: obj_meta.rect_params.border_color.set(0.0, 0.0, 1.0, 0.8)
             elif cls_id == 1: obj_meta.rect_params.border_color.set(1.0, 1.0, 0.0, 0.8)
@@ -192,9 +197,8 @@ def osd_sink_pad_buffer_probe(pad, info, u_data):
         
         
         # infer place holder 
-        # available_Pholders = draw_on_image(rgb, list_bbox)
-        # draw_placeholder(batch_meta, frame_meta_, available_Pholders)
-        # print(type(available_Pholders))
+        available_Pholders = draw_on_image(rgb, list_bbox)
+        draw_placeholder(batch_meta, frame_meta_, available_Pholders)
 
 
         # # Acquiring a display meta object. The memory ownership remains in
@@ -335,10 +339,10 @@ def main(args):
     nvdslogger = Gst.ElementFactory.make("nvdslogger", "logger")
     mem_type = int(pyds.NVBUF_MEM_CUDA_UNIFIED)
 
-    args.append('file:///opt/nvidia/deepstream/deepstream-6.1/sources/DeepStream-Yolo/eval_video_1.mp4')
+    src_file = 'file:///opt/nvidia/deepstream/deepstream-6.1/sources/DeepStream-Yolo/eval_video_1.mp4'
     # Source element for reading from the file
 
-    source = create_source_bin(0, args[1])
+    source = create_source_bin(0, src_file)
 
     # Create nvstreammux instance to form batches from one or more sources.
     streammux = Gst.ElementFactory.make("nvstreammux", "Stream-muxer")
@@ -356,8 +360,10 @@ def main(args):
     # behaviour of inferencing is set through config file
     pgie = Gst.ElementFactory.make("nvinfer", "primary-inference")
 
-    pgie.set_property('config-file-path', "dstest1_pgie_config.txt")
-    # pgie.set_property('config-file-path', "config_infer_primary_yoloV4.txt")
+    if use_v4:
+        pgie.set_property('config-file-path', "config_infer_primary_yoloV4.txt")
+    else:
+        pgie.set_property('config-file-path', "dstest1_pgie_config.txt")
 
     # Use convertor to convert from NV12 to RGBA as required by nvosd
     nvvidconv = Gst.ElementFactory.make("nvvideoconvert", "convertor")
@@ -370,7 +376,13 @@ def main(args):
 
     # Finally render the osd output
     # sink = Gst.ElementFactory.make("fakesink", "fakesink")
-    # sink = Gst.ElementFactory.make("nveglglessink", "nvvideo-renderer")
+    if live_stream:
+        sink = Gst.ElementFactory.make("nveglglessink", "nvvideo-renderer")
+    else:
+        sink = Gst.ElementFactory.make("filesink", "filesink")
+        sink.set_property("location", "output.mp4")
+        sink.set_property("sync", 0)
+        sink.set_property("async", 0)
     
     # save file
     nvvidconv2 = Gst.ElementFactory.make("nvvideoconvert", "convertor2")
@@ -382,10 +394,6 @@ def main(args):
     codeparser = Gst.ElementFactory.make("mpeg4videoparse", "mpeg4-parser")
     container = Gst.ElementFactory.make("qtmux", "qtmux")
 
-    sink = Gst.ElementFactory.make("filesink", "filesink")
-    sink.set_property("location", "output.mp4")
-    sink.set_property("sync", 0)
-    sink.set_property("async", 0)
 
     print("Adding elements to Pipeline \n")
     pipeline.add(nvdslogger)
@@ -414,16 +422,15 @@ def main(args):
     nvvidconv.link(nvosd)
 
 
-    #if stream
-    # nvosd.link(sink)
-
-    # if save video 
-    nvosd.link(nvvidconv2)
-    nvvidconv2.link(capsfilter)
-    capsfilter.link(encoder)
-    encoder.link(codeparser)
-    codeparser.link(container)
-    container.link(sink)
+    if live_stream:
+        nvosd.link(sink)
+    else:
+        nvosd.link(nvvidconv2)
+        nvvidconv2.link(capsfilter)
+        capsfilter.link(encoder)
+        encoder.link(codeparser)
+        codeparser.link(container)
+        container.link(sink)
 
     # create an event loop and feed gstreamer bus mesages to it
     loop = GLib.MainLoop()
