@@ -23,7 +23,7 @@ import gi
 import os
 import sys
 from draw_image import draw_on_image
-sys.path.append('../')
+
 gi.require_version('Gst', '1.0')
 
 import numpy as np
@@ -34,7 +34,14 @@ IMAGE_HEIGHT = 720
 IMAGE_WIDTH = 1280
 
 live_stream = True
-use_v4 = True  # False to use v7
+use_v4 = False  # False to use v7
+
+
+def blockPrint():
+    sys.stdout = open(os.devnull, 'w')
+    
+def enablePrint():
+    sys.stdout = sys.__stdout__
 
 def bus_call(bus, message, loop):
     t = message.type
@@ -197,8 +204,10 @@ def osd_sink_pad_buffer_probe(pad, info, u_data):
         
         
         # infer place holder 
+        blockPrint()
         available_Pholders = draw_on_image(rgb, list_bbox)
         draw_placeholder(batch_meta, frame_meta_, available_Pholders)
+        enablePrint()
 
 
         # # Acquiring a display meta object. The memory ownership remains in
@@ -339,7 +348,7 @@ def main(args):
     nvdslogger = Gst.ElementFactory.make("nvdslogger", "logger")
     mem_type = int(pyds.NVBUF_MEM_CUDA_UNIFIED)
 
-    src_file = 'file:///opt/nvidia/deepstream/deepstream-6.1/sources/DeepStream-Yolo/eval_video_1.mp4'
+    src_file = 'file://'+ os.getcwd() + '/eval_video_1.mp4'
     # Source element for reading from the file
 
     source = create_source_bin(0, src_file)
@@ -363,7 +372,7 @@ def main(args):
     if use_v4:
         pgie.set_property('config-file-path', "config_infer_primary_yoloV4.txt")
     else:
-        pgie.set_property('config-file-path', "dstest1_pgie_config.txt")
+        pgie.set_property('config-file-path', "config_infer_primary_yoloV7.txt")
 
     # Use convertor to convert from NV12 to RGBA as required by nvosd
     nvvidconv = Gst.ElementFactory.make("nvvideoconvert", "convertor")

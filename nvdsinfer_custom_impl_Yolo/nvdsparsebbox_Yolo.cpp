@@ -31,7 +31,7 @@
 #include <unordered_map>
 #include "nvdsinfer_custom_impl.h"
 
-static const int NUM_CLASSES_YOLO = 80;
+static const int NUM_CLASSES_YOLO = 6;
 
 float clamp(const float val, const float minVal, const float maxVal)
 {
