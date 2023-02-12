@@ -17,6 +17,8 @@
 # limitations under the License.
 ################################################################################
 
+from copy import deepcopy
+import numpy as np
 import pyds
 from gi.repository import GLib, Gst
 import gi
@@ -24,24 +26,27 @@ import os
 import sys
 from draw_image import draw_on_image
 
-gi.require_version('Gst', '1.0')
+from FPS import PERF_DATA
 
-import numpy as np
-from copy import deepcopy
+gi.require_version('Gst', '1.0')
 
 
 IMAGE_HEIGHT = 720
 IMAGE_WIDTH = 1280
 
-live_stream = True
+live_stream = False
 use_v4 = False  # False to use v7
+
+perf_data = None
 
 
 def blockPrint():
     sys.stdout = open(os.devnull, 'w')
-    
+
+
 def enablePrint():
     sys.stdout = sys.__stdout__
+
 
 def bus_call(bus, message, loop):
     t = message.type
@@ -58,72 +63,82 @@ def bus_call(bus, message, loop):
     return True
 
 
-def add_obj_meta_to_frame(batch_meta, frame_meta, box):
+def add_obj_meta_to_frame(batch_meta, frame_meta, box, text=None):
     """ Inserts an object into the metadata """
     # this is a good place to insert objects into the metadata.
     # Here's an example of inserting a single object.
     obj_meta = pyds.nvds_acquire_obj_meta_from_pool(batch_meta)
     # Set bbox properties. These are in input resolution.
     rect_params = obj_meta.rect_params
-    rect_params.left = box['left']
-    rect_params.top = box['top']
-    rect_params.width = box['right'] - box['left']
-    rect_params.height = box['bottom'] - box['top']
+    if text:
+        rect_params.left = box['Left']
+        rect_params.top = box['Top']
+        rect_params.width = 200
+        rect_params.height = 50
+        # Semi-transparent yellow backgroud
+        rect_params.has_bg_color = 1
+        rect_params.bg_color.set(1, 1, 1, 1.0)
 
-    # Semi-transparent yellow backgroud
-    rect_params.has_bg_color = 0
-    rect_params.bg_color.set(1, 1, 0, 0.4)
+        # Red border of width 3
+        rect_params.border_width = 0
+        rect_params.border_color.set(1, 0, 0, 0.0)
+    else:
+        rect_params.left = box['left']
+        rect_params.top = box['top']
+        rect_params.width = box['right'] - box['left']
+        rect_params.height = box['bottom'] - box['top']
 
-    # Red border of width 3
-    rect_params.border_width = 3
-    rect_params.border_color.set(1, 0, 0, 1)
+        # Semi-transparent yellow backgroud
+        rect_params.has_bg_color = 0
+        rect_params.bg_color.set(1, 1, 0, 0.8)
+
+        # Red border of width 3
+        rect_params.border_width = 3
+        rect_params.border_color.set(1, 0, 0, 1)
 
     # Set object info including class, detection confidence, etc.
     obj_meta.confidence = 1.0
     obj_meta.class_id = 6
 
-    # There is no tracking ID upon detection. The tracker will
-    # assign an ID.
-    obj_meta.object_id = 1
+    if text:
+        dis_txt = "FPS: {}\t\t\tN_full_KLT: {}\nrack_conf: {}\tN_empty_KLT: {}\n\t\t\t\tN_Pholders: {}".format(
+            text['FPS'], text['N_full_KLT'], text['rack_conf'], text['N_empty_KLT'], text['N_Pholders'])
 
-    # lbl_id = 1
-    # if lbl_id >= len(label_names):
-    #     lbl_id = 0
+        # Set display text for the object.
+        txt_params = obj_meta.text_params
+        if txt_params.display_text:
+            pyds.free_buffer(txt_params.display_text)
 
-    # # Set the object classification label.
-    # obj_meta.obj_label = label_names[lbl_id]
+        txt_params.x_offset = int(rect_params.left) + 10
+        txt_params.y_offset = max(0, int(rect_params.top) + 10)
+        txt_params.display_text = dis_txt
+        # Font , font-color and font-size
+        txt_params.font_params.font_name = "Serif"
+        txt_params.font_params.font_size = 7
+        # set(red, green, blue, alpha); set to White
+        txt_params.font_params.font_color.set(0.0, 0.0, 0.0, 1.0)
 
-    # # Set display text for the object.
-    # txt_params = obj_meta.text_params
-    # if txt_params.display_text:
-    #     pyds.free_buffer(txt_params.display_text)
+        # Text background color
+        txt_params.set_bg_clr = 0
+        # set(red, green, blue, alpha); set to Black
+        txt_params.text_bg_clr.set(0.0, 0.0, 0.0, 1.0)
 
-    # txt_params.x_offset = int(rect_params.left)
-    # txt_params.y_offset = max(0, int(rect_params.top) - 10)
-    # txt_params.display_text = (
-    #     label_names[lbl_id] + " " + "{:04.3f}".format(frame_object.detectionConfidence)
-    # )
-    # # Font , font-color and font-size
-    # txt_params.font_params.font_name = "Serif"
-    # txt_params.font_params.font_size = 10
-    # # set(red, green, blue, alpha); set to White
-    # txt_params.font_params.font_color.set(1.0, 1.0, 1.0, 1.0)
-
-    # # Text background color
-    # txt_params.set_bg_clr = 1
-    # # set(red, green, blue, alpha); set to Black
-    # txt_params.text_bg_clr.set(0.0, 0.0, 0.0, 1.0)
-
-    # # Inser the object into current frame meta
-    # # This object has no parent
+        # Inser the object into current frame meta
+        # This object has no parent
     pyds.nvds_add_obj_meta_to_frame(frame_meta, obj_meta, None)
 
 
 def draw_placeholder(batch_meta, frame_meta, bbox):
-    if len(bbox)==0: return
+    if len(bbox) == 0:
+        return
     for box in bbox:
         add_obj_meta_to_frame(batch_meta, frame_meta, box)
-    
+
+
+def draw_board(batch_meta, frame_meta, bbox, text):
+    add_obj_meta_to_frame(batch_meta, frame_meta, bbox, text)
+    return
+
 
 def osd_sink_pad_buffer_probe(pad, info, u_data):
     frame_number = 0
@@ -142,14 +157,16 @@ def osd_sink_pad_buffer_probe(pad, info, u_data):
     l_frame = batch_meta.frame_meta_list
     n_frame = pyds.get_nvds_buf_surface(hash(gst_buffer), 0)
     rgba = np.array(n_frame, copy=True, order='C')
-    r, g, b, a = rgba[:,:,0], rgba[:,:,1], rgba[:,:,2], rgba[:,:,3]
-    rgb = np.zeros((720,1280,3), dtype='uint8')
-    rgb[:,:,0] = r
-    rgb[:,:,1] = g
-    rgb[:,:,2] = b
+    r, g, b, a = rgba[:, :, 0], rgba[:, :, 1], rgba[:, :, 2], rgba[:, :, 3]
+    rgb = np.zeros((720, 1280, 3), dtype='uint8')
+    rgb[:, :, 0] = r
+    rgb[:, :, 1] = g
+    rgb[:, :, 2] = b
     # print(frame_copy[0][0][0])
     frame_meta_ = None
     while l_frame is not None:
+        global perf_data
+        perf_data.update_fps('stream0')
         try:
             # Note that l_frame.data needs a cast to pyds.NvDsFrameMeta
             # The casting is done by pyds.NvDsFrameMeta.cast()
@@ -160,15 +177,17 @@ def osd_sink_pad_buffer_probe(pad, info, u_data):
             frame_meta_ = frame_meta
         except StopIteration:
             break
-            
+
         # Intiallizing object counter with 0.
         frame_number = frame_meta.frame_num
         num_rects = frame_meta.num_obj_meta
         l_obj = frame_meta.obj_meta_list
 
         list_bbox = []
-        temp_dict = {'Left':0, 'Top': 0, 'Right': 0, 'Bottom': 0, 'Conf': 0.0, 'ObjectClassName': '1'}
-        label_list = ['rack_1','rack_2','rack_3','rack_4','klt_box_empty','klt_box_full']
+        temp_dict = {'Left': 0, 'Top': 0, 'Right': 0,
+                     'Bottom': 0, 'Conf': 0.0, 'ObjectClassName': '1'}
+        label_list = ['rack_1', 'rack_2', 'rack_3',
+                      'rack_4', 'klt_box_empty', 'klt_box_full']
         while l_obj is not None:
             try:
                 # Casting l_obj.data to pyds.NvDsObjectMeta
@@ -188,27 +207,41 @@ def osd_sink_pad_buffer_probe(pad, info, u_data):
 
             cls_id = obj_meta.class_id
             obj_meta.text_params.display_text = ("")
-            obj_meta.text_params.font_params.font_color.set(1.0,1.0,1.0,0.0)
-            obj_meta.text_params.text_bg_clr.set(0.0,0.0,0.0,0.0)
-            
-            if cls_id == 0: obj_meta.rect_params.border_color.set(0.0, 0.0, 1.0, 0.8)
-            elif cls_id == 1: obj_meta.rect_params.border_color.set(1.0, 1.0, 0.0, 0.8)
-            elif cls_id == 2: obj_meta.rect_params.border_color.set(1.0, 0.64, 0.0, 0.8)
-            elif cls_id == 3: obj_meta.rect_params.border_color.set(0.9, 0.9, 1.0, 0.8)
-            elif cls_id == 4: obj_meta.rect_params.border_color.set(0.5, 0.0, 0.5, 0.8)
-            else: obj_meta.rect_params.border_color.set(0.0, 1.0, 0.0, 0.8)
+            obj_meta.text_params.font_params.font_color.set(1.0, 1.0, 1.0, 0.0)
+            obj_meta.text_params.text_bg_clr.set(0.0, 0.0, 0.0, 0.0)
+
+            if cls_id == 0:
+                obj_meta.rect_params.border_color.set(0.0, 0.0, 0.0, 1.0)
+            elif cls_id == 1:
+                obj_meta.rect_params.border_color.set(1.0, 1.0, 0.0, 1.0)
+            elif cls_id == 2:
+                obj_meta.rect_params.border_color.set(1.0, 0.64, 0.0, 1.0)
+            elif cls_id == 3:
+                obj_meta.rect_params.border_color.set(0.9, 0.9, 1.0, 1.0)
+            elif cls_id == 4:
+                obj_meta.rect_params.border_color.set(0.5, 0.0, 0.5, 1.0)
+            else:
+                obj_meta.rect_params.border_color.set(0.0, 1.0, 0.0, 1.0)
             try:
                 l_obj = l_obj.next
             except StopIteration:
                 break
-        
-        
-        # infer place holder 
+            text = {'FPS': 25, 'rack_conf': 0.95, 'N_full_KLT': 2,
+                    'N_empty_KLT': 2, 'N_Pholders': 2}
+            
+            if cls_id in [0, 1, 2, 3]:
+                # bbox, text = func(bbox, text)
+                text['rack_conf'] = bbox['Conf']
+                try:
+                    text['FPS'] = int(perf_data.perf_dict['stream0'])
+                except: pass
+                draw_board(batch_meta, frame_meta, bbox, text)
+
+        # draw place holder
         blockPrint()
         available_Pholders = draw_on_image(rgb, list_bbox)
         draw_placeholder(batch_meta, frame_meta_, available_Pholders)
         enablePrint()
-
 
         # # Acquiring a display meta object. The memory ownership remains in
         # # the C code so downstream plugins can still access it. Otherwise
@@ -239,8 +272,6 @@ def osd_sink_pad_buffer_probe(pad, info, u_data):
         # # set(red, green, blue, alpha); set to Black
         # py_nvosd_text_params.text_bg_clr.set(0.0, 0.0, 0.0, 1.0)
         # pyds.nvds_add_display_meta_to_frame(frame_meta, display_meta)
-
-
         try:
             l_frame = l_frame.next
         except StopIteration:
@@ -290,6 +321,8 @@ def decodebin_child_added(child_proxy, Object, name, user_data):
 
 
 file_loop = False
+
+
 def create_source_bin(index, uri):
     print("Creating source bin")
 
@@ -337,6 +370,8 @@ def create_source_bin(index, uri):
 
 
 def main(args):
+    global perf_data
+    perf_data = PERF_DATA(1)
     # Standard GStreamer initialization
     Gst.init(None)
 
@@ -348,7 +383,7 @@ def main(args):
     nvdslogger = Gst.ElementFactory.make("nvdslogger", "logger")
     mem_type = int(pyds.NVBUF_MEM_CUDA_UNIFIED)
 
-    src_file = 'file://'+ os.getcwd() + '/eval_video_1.mp4'
+    src_file = 'file://' + os.getcwd() + '/eval_video_1.mp4'
     # Source element for reading from the file
 
     source = create_source_bin(0, src_file)
@@ -370,9 +405,11 @@ def main(args):
     pgie = Gst.ElementFactory.make("nvinfer", "primary-inference")
 
     if use_v4:
-        pgie.set_property('config-file-path', "config_infer_primary_yoloV4.txt")
+        pgie.set_property('config-file-path',
+                          "config_infer_primary_yoloV4.txt")
     else:
-        pgie.set_property('config-file-path', "config_infer_primary_yoloV7.txt")
+        pgie.set_property('config-file-path',
+                          "config_infer_primary_yoloV7.txt")
 
     # Use convertor to convert from NV12 to RGBA as required by nvosd
     nvvidconv = Gst.ElementFactory.make("nvvideoconvert", "convertor")
@@ -384,15 +421,16 @@ def main(args):
     nvosd.set_property("process-mode", 1)    # 0 CPU, 1 GPU
 
     # Finally render the osd output
-    # sink = Gst.ElementFactory.make("fakesink", "fakesink")
     if live_stream:
+        # sink = Gst.ElementFactory.make("fakesink", "fakesink")
         sink = Gst.ElementFactory.make("nveglglessink", "nvvideo-renderer")
+        # sink.set_property("qos",0)
     else:
         sink = Gst.ElementFactory.make("filesink", "filesink")
         sink.set_property("location", "output.mp4")
         sink.set_property("sync", 0)
         sink.set_property("async", 0)
-    
+
     # save file
     nvvidconv2 = Gst.ElementFactory.make("nvvideoconvert", "convertor2")
     capsfilter = Gst.ElementFactory.make("capsfilter", "capsfilter")
@@ -403,6 +441,18 @@ def main(args):
     codeparser = Gst.ElementFactory.make("mpeg4videoparse", "mpeg4-parser")
     container = Gst.ElementFactory.make("qtmux", "qtmux")
 
+    queue1 = Gst.ElementFactory.make("queue", "queue1")
+    queue2 = Gst.ElementFactory.make("queue", "queue2")
+    queue3 = Gst.ElementFactory.make("queue", "queue3")
+    queue4 = Gst.ElementFactory.make("queue", "queue4")
+    queue5 = Gst.ElementFactory.make("queue", "queue5")
+    queue6 = Gst.ElementFactory.make("queue", "queue6")
+    pipeline.add(queue1)
+    pipeline.add(queue2)
+    pipeline.add(queue3)
+    pipeline.add(queue4)
+    pipeline.add(queue5)
+    pipeline.add(queue6)
 
     print("Adding elements to Pipeline \n")
     pipeline.add(nvdslogger)
@@ -425,14 +475,18 @@ def main(args):
     srcpad = source.get_static_pad("src")
 
     srcpad.link(sinkpad)
-    streammux.link(pgie)
-    pgie.link(nvdslogger)
-    nvdslogger.link(nvvidconv)
-    nvvidconv.link(nvosd)
-
+    streammux.link(queue1)
+    queue1.link(pgie)
+    pgie.link(queue2)
+    queue2.link(nvdslogger)
+    nvdslogger.link(queue3)
+    queue3.link(nvvidconv)
+    nvvidconv.link(queue4)
+    queue4.link(nvosd)
 
     if live_stream:
-        nvosd.link(sink)
+        nvosd.link(queue5)
+        queue5.link(sink)
     else:
         nvosd.link(nvvidconv2)
         nvvidconv2.link(capsfilter)
@@ -452,6 +506,9 @@ def main(args):
     # had got all the metadata.
     osdsinkpad = nvosd.get_static_pad("sink")
     osdsinkpad.add_probe(Gst.PadProbeType.BUFFER, osd_sink_pad_buffer_probe, 0)
+
+    # perf callback function to print fps every 5 sec
+    GLib.timeout_add(5000, perf_data.perf_print_callback)
 
     # start play back and listen to events
     print("Starting pipeline \n")

@@ -10,7 +10,7 @@ pip3 install numpy
 pip3 install opencv-python
 pip3 install scikit-learn
 pip3 install tqdm    
-export CUDA_VER=11.7
+
 
 cd sources/DeepStream-Yolo
 
