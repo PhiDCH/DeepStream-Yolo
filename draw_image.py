@@ -5,11 +5,13 @@ import json
 def draw_on_image(im0, label_json):
     racks = []
     original_img = im0.copy()
+
     # xac dinh cac rack co trong frame
     for index, obj in enumerate(label_json):
         if obj["ObjectClassName"] in ['rack_1', 'rack_2', 'rack_3', 'rack_4']: 
-            left, top, right, bottom, conf = obj['Left'], obj['Top'], obj['Right'], obj['Bottom'], obj['Conf']
 
+            left, top, right, bottom, conf = obj['Left'], obj['Top'], obj['Right'], obj['Bottom'], obj['Conf']
+            # if abs((bottom - top)/2 - 360) <= 80:
             rack = {
                         'rack_type': obj["ObjectClassName"], 
                         'left': left, 
@@ -42,6 +44,7 @@ def draw_on_image(im0, label_json):
             left, top, right, bottom = obj['Left'], obj['Top'], obj['Right'], obj['Bottom']
             if (bottom-top) > 200 or (right-left) > 200 or (right-left)*(bottom-top) > 30000:
                 continue
+            
             cx = int((left + right)/2)
             # cy = int((top + bottom)/2)
             # if obj["ObjectClassName"] == 'klt_box_full':

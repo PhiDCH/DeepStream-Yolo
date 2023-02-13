@@ -35,8 +35,8 @@ gi.require_version('Gst', '1.0')
 IMAGE_HEIGHT = 720
 IMAGE_WIDTH = 1280
 
-live_stream = False
-use_v4 = False  # False to use v7
+live_stream = True
+use_v4 = True  # False to use v7
 
 perf_data = None
 
@@ -231,8 +231,6 @@ def osd_sink_pad_buffer_probe(pad, info, u_data):
                 obj_meta = pyds.NvDsObjectMeta.cast(l_obj.data)
             except StopIteration:
                 break
-            
-            dump_output_per_frame(obj_meta)
 
             bbox = deepcopy(temp_dict)
             bbox['Left'] = int(obj_meta.rect_params.left)
@@ -242,6 +240,26 @@ def osd_sink_pad_buffer_probe(pad, info, u_data):
             bbox['Conf'] = round(obj_meta.confidence, 2)
             bbox['ObjectClassName'] = label_list[obj_meta.class_id]
 
+            cls_id = obj_meta.class_id
+            if cls_id in [0,1,2,3]:
+                if abs((bbox['Bottom']+bbox['Top'])/2 - 360) > 150:
+                    obj_meta.rect_params.border_width = 0
+                    obj_meta.text_params.display_text = ("")
+                    obj_meta.text_params.font_params.font_color.set(1.0, 1.0, 1.0, 0.0)
+                    obj_meta.text_params.text_bg_clr.set(0.0, 0.0, 0.0, 0.0)
+                    l_obj = l_obj.next
+                    continue
+                
+            else: 
+                if (bbox['Bottom']-bbox['Top']) > 200 or (bbox['Right']-bbox['Left']) > 200 or (bbox['Right']-bbox['Left'])*(bbox['Bottom']-bbox['Top']) > 30000:
+                    obj_meta.rect_params.border_width = 0
+                    obj_meta.text_params.display_text = ("")
+                    obj_meta.text_params.font_params.font_color.set(1.0, 1.0, 1.0, 0.0)
+                    obj_meta.text_params.text_bg_clr.set(0.0, 0.0, 0.0, 0.0)
+                    l_obj = l_obj.next
+                    continue
+            
+            dump_output_per_frame(obj_meta)
             list_bbox.append(bbox)
 
             cls_id = obj_meta.class_id

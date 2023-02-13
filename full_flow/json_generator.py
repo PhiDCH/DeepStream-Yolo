@@ -173,7 +173,7 @@ def get_general_rack_obj_infomation_in_video(each_rack_obj_klt_position_dict):
     return result_dict
 
 # Tiền xử lý các KLT trong rack, mục đích là loại bỏ các tracking nhầm dựa theo cluster và thông tin của rack
-def pre_processing_rack_input_dict(general_rack_obj_infomation_in_video, filter_by_frame = 180):
+def pre_processing_rack_input_dict(general_rack_obj_infomation_in_video, filter_by_frame = 30):
     temp_arr = []
     for rack_id, rack_id_content in tqdm(sorted(general_rack_obj_infomation_in_video.items())):
         rack_name = rack_id_content['rack_name']

@@ -13,6 +13,11 @@ pip3 install tqdm
 pip3 install timm 
 pip3 install torch
 pip3 install torchvision
+pip3 install filterpy
+pip3 install lap 
+pip3 install Cython
+pip3 install cython-bbox
+pip3 install ipdb 
 
 
 cd sources/DeepStream-Yolo
