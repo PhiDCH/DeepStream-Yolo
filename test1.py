@@ -23,6 +23,7 @@ import pyds
 from gi.repository import GLib, Gst
 import gi
 import os
+import glob
 import sys
 from draw_image import draw_on_image
 
@@ -48,6 +49,41 @@ def enablePrint():
     sys.stdout = sys.__stdout__
 
 
+output_txt_per_frame = ''
+output_txt = []
+
+def dump_output_per_frame(obj_meta):
+    global output_txt_per_frame
+    cls_id, x, y, w, h, conf = obj_meta.class_id, obj_meta.rect_params.left, obj_meta.rect_params.top, obj_meta.rect_params.width, obj_meta.rect_params.height, obj_meta.confidence
+    txt = voc2yolo(cls_id, x, y, w, h, conf)
+    if output_txt_per_frame:
+        output_txt_per_frame += '\n' + txt
+    else:
+        output_txt_per_frame += txt
+
+def clean_folder(folder_path):
+    files = glob.glob(f'{folder_path}/*')
+    for f in files:
+        os.remove(f)
+
+def dump_out():
+    clean_folder('output/')
+    for i, line in enumerate(output_txt):
+        video_name = 'eval_video_1.mp4'
+        save_name = video_name.replace('.mp4', f'_{i + 1}.txt')
+        with open(f'output/{save_name}', 'w+') as f:
+            f.write(line)
+        # with open('output/{}.txt'.format(str(i)), 'w+') as f:
+        #     f.write(line)
+
+def voc2yolo(cls_id, x, y, w, h, conf, W=IMAGE_WIDTH, H=IMAGE_HEIGHT):
+    x_center, y_cent = x + w/2, y + h/2
+    w, h = w/W, h/H
+    x_center, y_cent = x_center/W, y_cent/H
+    txt = ' '.join(str(i) for i in [cls_id, x_center, y_cent, w, h, conf])
+    return txt
+
+
 def bus_call(bus, message, loop):
     t = message.type
     if t == Gst.MessageType.EOS:
@@ -63,7 +99,7 @@ def bus_call(bus, message, loop):
     return True
 
 
-def add_obj_meta_to_frame(batch_meta, frame_meta, box, text=None):
+def add_obj_meta_to_frame(batch_meta, frame_meta, box, text=False):
     """ Inserts an object into the metadata """
     # this is a good place to insert objects into the metadata.
     # Here's an example of inserting a single object.
@@ -71,9 +107,9 @@ def add_obj_meta_to_frame(batch_meta, frame_meta, box, text=None):
     # Set bbox properties. These are in input resolution.
     rect_params = obj_meta.rect_params
     if text:
-        rect_params.left = box['Left']
-        rect_params.top = box['Top']
-        rect_params.width = 200
+        rect_params.left = box['left']
+        rect_params.top = box['top']
+        rect_params.width = 220
         rect_params.height = 50
         # Semi-transparent yellow backgroud
         rect_params.has_bg_color = 1
@@ -101,8 +137,12 @@ def add_obj_meta_to_frame(batch_meta, frame_meta, box, text=None):
     obj_meta.class_id = 6
 
     if text:
+        try:
+            fps = int(perf_data.perf_dict['stream0'])
+        except:
+            fps = 0
         dis_txt = "FPS: {}\t\t\tN_full_KLT: {}\nrack_conf: {}\tN_empty_KLT: {}\n\t\t\t\tN_Pholders: {}".format(
-            text['FPS'], text['N_full_KLT'], text['rack_conf'], text['N_empty_KLT'], text['N_Pholders'])
+            fps, box['n_full'], box['conf'], box['n_empty'], box['n_pholders'])
 
         # Set display text for the object.
         txt_params = obj_meta.text_params
@@ -114,7 +154,7 @@ def add_obj_meta_to_frame(batch_meta, frame_meta, box, text=None):
         txt_params.display_text = dis_txt
         # Font , font-color and font-size
         txt_params.font_params.font_name = "Serif"
-        txt_params.font_params.font_size = 7
+        txt_params.font_params.font_size = 8
         # set(red, green, blue, alpha); set to White
         txt_params.font_params.font_color.set(0.0, 0.0, 0.0, 1.0)
 
@@ -135,14 +175,14 @@ def draw_placeholder(batch_meta, frame_meta, bbox):
         add_obj_meta_to_frame(batch_meta, frame_meta, box)
 
 
-def draw_board(batch_meta, frame_meta, bbox, text):
-    add_obj_meta_to_frame(batch_meta, frame_meta, bbox, text)
+def draw_board(batch_meta, frame_meta, rack_meta):
+    for rack in rack_meta:
+        add_obj_meta_to_frame(batch_meta, frame_meta, rack, True)
     return
 
 
 def osd_sink_pad_buffer_probe(pad, info, u_data):
-    frame_number = 0
-    num_rects = 0
+    global perf_data, output_txt_per_frame, output_txt
 
     gst_buffer = info.get_buffer()
     if not gst_buffer:
@@ -158,14 +198,13 @@ def osd_sink_pad_buffer_probe(pad, info, u_data):
     n_frame = pyds.get_nvds_buf_surface(hash(gst_buffer), 0)
     rgba = np.array(n_frame, copy=True, order='C')
     r, g, b, a = rgba[:, :, 0], rgba[:, :, 1], rgba[:, :, 2], rgba[:, :, 3]
-    rgb = np.zeros((720, 1280, 3), dtype='uint8')
+    rgb = np.zeros((IMAGE_HEIGHT, IMAGE_WIDTH, 3), dtype='uint8')
     rgb[:, :, 0] = r
     rgb[:, :, 1] = g
     rgb[:, :, 2] = b
     # print(frame_copy[0][0][0])
     frame_meta_ = None
     while l_frame is not None:
-        global perf_data
         perf_data.update_fps('stream0')
         try:
             # Note that l_frame.data needs a cast to pyds.NvDsFrameMeta
@@ -179,8 +218,6 @@ def osd_sink_pad_buffer_probe(pad, info, u_data):
             break
 
         # Intiallizing object counter with 0.
-        frame_number = frame_meta.frame_num
-        num_rects = frame_meta.num_obj_meta
         l_obj = frame_meta.obj_meta_list
 
         list_bbox = []
@@ -194,12 +231,14 @@ def osd_sink_pad_buffer_probe(pad, info, u_data):
                 obj_meta = pyds.NvDsObjectMeta.cast(l_obj.data)
             except StopIteration:
                 break
+            
+            dump_output_per_frame(obj_meta)
 
             bbox = deepcopy(temp_dict)
-            bbox['Left'] = obj_meta.rect_params.left
-            bbox['Top'] = obj_meta.rect_params.top
-            bbox['Right'] = bbox['Left'] + obj_meta.rect_params.width
-            bbox['Bottom'] = bbox['Top'] + obj_meta.rect_params.height
+            bbox['Left'] = int(obj_meta.rect_params.left)
+            bbox['Top'] = int(obj_meta.rect_params.top)
+            bbox['Right'] = int(bbox['Left'] + obj_meta.rect_params.width)
+            bbox['Bottom'] = int(bbox['Top'] + obj_meta.rect_params.height)
             bbox['Conf'] = round(obj_meta.confidence, 2)
             bbox['ObjectClassName'] = label_list[obj_meta.class_id]
 
@@ -226,54 +265,20 @@ def osd_sink_pad_buffer_probe(pad, info, u_data):
                 l_obj = l_obj.next
             except StopIteration:
                 break
-            text = {'FPS': 25, 'rack_conf': 0.95, 'N_full_KLT': 2,
-                    'N_empty_KLT': 2, 'N_Pholders': 2}
-            
-            if cls_id in [0, 1, 2, 3]:
-                # bbox, text = func(bbox, text)
-                text['rack_conf'] = bbox['Conf']
-                try:
-                    text['FPS'] = int(perf_data.perf_dict['stream0'])
-                except: pass
-                draw_board(batch_meta, frame_meta, bbox, text)
 
-        # draw place holder
         blockPrint()
-        available_Pholders = draw_on_image(rgb, list_bbox)
-        draw_placeholder(batch_meta, frame_meta_, available_Pholders)
+        available_Pholders, list_racks = draw_on_image(rgb, list_bbox)
         enablePrint()
+        # draw place holder
+        draw_placeholder(batch_meta, frame_meta_, available_Pholders)
+        # draw board
+        draw_board(batch_meta, frame_meta_, list_racks)
+        
 
-        # # Acquiring a display meta object. The memory ownership remains in
-        # # the C code so downstream plugins can still access it. Otherwise
-        # # the garbage collector will claim it when this probe function exits.
-        # display_meta = pyds.nvds_acquire_display_meta_from_pool(batch_meta)
-        # display_meta.num_labels = 1
-        # py_nvosd_text_params = display_meta.text_params[0]
-        # # Setting display text to be shown on screen
-        # # Note that the pyds module allocates a buffer for the string, and the
-        # # memory will not be claimed by the garbage collector.
-        # # Reading the display_text field here will return the C address of the
-        # # allocated string. Use pyds.get_string() to get the string content.
-        # py_nvosd_text_params.display_text = "Frame Number={} Number of Objects={}".format(
-        #     frame_number, num_rects)
-
-        # # Now set the offsets where the string should appear
-        # py_nvosd_text_params.x_offset = 10
-        # py_nvosd_text_params.y_offset = 12
-
-        # # Font , font-color and font-size
-        # py_nvosd_text_params.font_params.font_name = "Serif"
-        # py_nvosd_text_params.font_params.font_size = 10
-        # # set(red, green, blue, alpha); set to White
-        # py_nvosd_text_params.font_params.font_color.set(1.0, 1.0, 1.0, 1.0)
-
-        # # Text background color
-        # py_nvosd_text_params.set_bg_clr = 1
-        # # set(red, green, blue, alpha); set to Black
-        # py_nvosd_text_params.text_bg_clr.set(0.0, 0.0, 0.0, 1.0)
-        # pyds.nvds_add_display_meta_to_frame(frame_meta, display_meta)
+        output_txt.append(output_txt_per_frame)
         try:
             l_frame = l_frame.next
+            output_txt_per_frame = ''
         except StopIteration:
             break
 
@@ -519,6 +524,7 @@ def main(args):
         pass
     # cleanup
     pipeline.set_state(Gst.State.NULL)
+    dump_out()
 
 
 if __name__ == '__main__':

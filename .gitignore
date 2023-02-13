@@ -3,6 +3,7 @@
 *.jpg
 
 *.pt
+*.pth
 *.cfg
 *.wts
 *.engine
@@ -15,3 +16,4 @@ output
 
 __pycache__
 .ipynb_checkpoints/
+output

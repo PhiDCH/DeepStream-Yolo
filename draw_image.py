@@ -1,8 +1,6 @@
 import cv2
-from bmw_draw import draw_on_rack_1, draw_on_rack_2, draw_on_rack_3, draw_on_rack_4, classify_bbox_on_rack_rating
+from bmw_draw import rack_dict, draw_on_rack_1, draw_on_rack_2, draw_on_rack_3, draw_on_rack_4, classify_bbox_on_rack_rating
 import json 
-
-rack_dict = json.load(open("./rack_information.json"))
 
 def draw_on_image(im0, label_json):
     racks = []
@@ -23,6 +21,7 @@ def draw_on_image(im0, label_json):
                         'bottom_box_info': [],
                         'left_box_info': [],
                         'right_box_info': [],
+                        'n_pholders':rack_dict[obj["ObjectClassName"]]['num_all_placeholders'],
                         'n_full': 0,
                         'n_empty': 0
                     }
@@ -57,6 +56,7 @@ def draw_on_image(im0, label_json):
                     rack['bottom_box_info'].append(bottom)
                     rack['left_box_info'].append(left)
                     rack['right_box_info'].append(right)
+                    rack['n_pholders'] = rack['n_pholders'] - 1 if rack['n_pholders'] >= 1 else 0
                     if obj["ObjectClassName"] == 'klt_box_full':
                         rack['n_full'] += 1
                     else:
@@ -88,6 +88,9 @@ def draw_on_image(im0, label_json):
         if len(rack['top_box_info']) != 0:
 
             if rack['rack_type'] == 'rack_4':
+#                 rets, labels = classify_bbox_on_rack_rating(rack, num_shelves, shelf_info)
+# #                         print("----Draw rack 4----")
+#                 draw_on_rack_4(im0, rets, labels, rack, available_pl)
                 try:
                     rets, labels = classify_bbox_on_rack_rating(rack, num_shelves, shelf_info)
 #                         print("----Draw rack 4----")
@@ -96,6 +99,9 @@ def draw_on_image(im0, label_json):
                     print("-----Draw on rack 4 FAILED-----")
 
             elif rack['rack_type'] == 'rack_3':
+#                 rets, labels = classify_bbox_on_rack_rating(rack, num_shelves, shelf_info)
+#                      print("----Draw rack 3----")    
+                # draw_on_rack_3(im0, rets, labels, rack, available_pl)
                 try:
                     rets, labels = classify_bbox_on_rack_rating(rack, num_shelves, shelf_info)
 #                     print("----Draw rack 3----")    
@@ -125,7 +131,7 @@ def draw_on_image(im0, label_json):
     #     lb = [left, top, right, bottom]
     #     # im0 = plot_one_box(lb, im0, (0, 0, 255), "Free Placeholder")
     #     im0 = plot_one_box(lb, im0, (0, 0, 255), "")
-    return available_pl
+    return available_pl, racks
     # im0 = cv2.putText(im0, f'FPS: {1/(t2-t0)}', (20, 20), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2, cv2.LINE_AA)
 
 

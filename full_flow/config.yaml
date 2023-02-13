@@ -1,0 +1,16 @@
+tracker:
+    track_thresh: 0.7
+    track_buffer: 30
+    match_thresh: 0.9
+    name: None
+    aspect_ratio_thresh: 1.6
+    mot20: False
+    sort_track:
+        conf: 0.95
+        max_age: 300
+        iou_threshold: 0.3
+general:
+    mAP: 95.8
+    FPS: 30
+    submission_name: 'Winner-is-coming'
+    is_confidence: False

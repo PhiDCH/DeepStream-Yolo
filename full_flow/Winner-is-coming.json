@@ -1,0 +1,97 @@
+{
+    "eval_video": [
+        {
+            "rack_name": "rack_1",
+            "rack_conf": 1,
+            "N_empty_KLT": 10,
+            "N_full_KLT": 12,
+            "N_Pholders": 26,
+            "shelf_N_Pholders": {
+                "shelf_1": 7,
+                "shelf_2": 8,
+                "shelf_3": 3,
+                "shelf_4": 8
+            }
+        },
+        {
+            "rack_name": "rack_2",
+            "rack_conf": 1,
+            "N_empty_KLT": 9,
+            "N_full_KLT": 8,
+            "N_Pholders": 24,
+            "shelf_N_Pholders": {
+                "shelf_1": 5,
+                "shelf_2": 5,
+                "shelf_3": 9,
+                "shelf_4": 5
+            }
+        },
+        {
+            "rack_name": "rack_4",
+            "rack_conf": 1,
+            "N_empty_KLT": 8,
+            "N_full_KLT": 8,
+            "N_Pholders": 0,
+            "shelf_N_Pholders": {}
+        },
+        {
+            "rack_name": "rack_3",
+            "rack_conf": 1,
+            "N_empty_KLT": 4,
+            "N_full_KLT": 2,
+            "N_Pholders": 0,
+            "shelf_N_Pholders": {}
+        },
+        {
+            "rack_name": "rack_3",
+            "rack_conf": 1,
+            "N_empty_KLT": 2,
+            "N_full_KLT": 2,
+            "N_Pholders": 2,
+            "shelf_N_Pholders": {
+                "shelf_2": 1,
+                "shelf_3": 1
+            }
+        },
+        {
+            "rack_name": "rack_4",
+            "rack_conf": 1,
+            "N_empty_KLT": 4,
+            "N_full_KLT": 8,
+            "N_Pholders": 4,
+            "shelf_N_Pholders": {
+                "shelf_1": 2,
+                "shelf_3": 1,
+                "shelf_5": 1
+            }
+        },
+        {
+            "rack_name": "rack_1",
+            "rack_conf": 1,
+            "N_empty_KLT": 10,
+            "N_full_KLT": 14,
+            "N_Pholders": 24,
+            "shelf_N_Pholders": {
+                "shelf_1": 5,
+                "shelf_2": 5,
+                "shelf_3": 8,
+                "shelf_4": 6
+            }
+        },
+        {
+            "rack_name": "rack_2",
+            "rack_conf": 1,
+            "N_empty_KLT": 5,
+            "N_full_KLT": 12,
+            "N_Pholders": 21,
+            "shelf_N_Pholders": {
+                "shelf_1": 6,
+                "shelf_2": 3,
+                "shelf_3": 6,
+                "shelf_4": 6
+            }
+        }
+    ],
+    "mAP": 95.8,
+    "FPS": 30.0
+}
