@@ -66,7 +66,7 @@ def draw_on_image(im0, label_json):
     # xac dinh so klt trong moi shelf cua moi rack
     available_pl = []
     for rack in racks:
-        if rack['left'] <= 3 or 1280 - rack['right'] <= 3:
+        if rack['left'] <= 15 or 1280 - rack['right'] <= 15:
             continue
         shelf_info = rack_dict[rack['rack_type']]['information']
         num_shelves = rack_dict[rack['rack_type']]['num_shelves']

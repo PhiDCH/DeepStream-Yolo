@@ -45,7 +45,9 @@ def get_json_track_record_v2(detect_path, source, config_, typtr = "byte"):
     all_label =  read_yolo_label(label_folder)
     # import ipdb
     # ipdb.set_trace()
-    tracker_rack = Sort(0.95, max_age = 300, iou_threshold = 0.3)
+    # tracker_rack = Sort(0.95, max_age = 300, iou_threshold = 0.3) # config yolov7
+    tracker_rack = Sort(0.7, max_age = 1000, iou_threshold = 0.1) # config yolov4
+    
     tracker_klt_full_rack = BYTETracker(args, max_age=1000)
     pbar = tqdm(total = 3253)
     frame_info = {}

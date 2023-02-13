@@ -10,14 +10,24 @@ pip3 install numpy
 pip3 install opencv-python
 pip3 install scikit-learn
 pip3 install tqdm    
+pip3 install timm 
+pip3 install torch
+pip3 install torchvision
 
 
 cd sources/DeepStream-Yolo
 
 export CUDA_VER=11.7
-cp nvdsinfer_custombboxparser.cpp /opt/nvidia/deepstream/deepstream-6.1/sources/libs/nvdsinfer_customparser/
-cd /opt/nvidia/deepstream/deepstream-6.1/sources/libs/nvdsinfer_customparser
+cd nvdsinfer_custombboxparser
 make 
+cd ..
+cd nvdsinfer_custom_impl_Yolo
+make 
+cd ..
 
-cd /opt/nvidia/deepstream/deepstream-6.1/sources/DeepStream-Yolo
+python3 test1.py
+
+# dump json
+cd full_flow
+python3 main_v2.py --detection ../output/ --source ../eval_video_1.mp4
 
