@@ -34,16 +34,13 @@ gi.require_version('Gst', '1.0')
 
 IMAGE_HEIGHT = 720
 IMAGE_WIDTH = 1280
-
-live_stream = True
-use_v4 = True  # False to use v7
+INPUT_VIDEO = 'eval_video_1.mp4'
 
 perf_data = None
 
 
 def blockPrint():
     sys.stdout = open(os.devnull, 'w')
-
 
 def enablePrint():
     sys.stdout = sys.__stdout__
@@ -138,7 +135,7 @@ def add_obj_meta_to_frame(batch_meta, frame_meta, box, text=False):
 
     if text:
         try:
-            fps = int(perf_data.perf_dict['stream0'])
+            fps = int(perf_data.all_fps[-1])
         except:
             fps = 0
         dis_txt = "FPS: {}\t\t\tN_full_KLT: {}\nrack_conf: {}\tN_empty_KLT: {}\n\t\t\t\tN_Pholders: {}".format(
@@ -189,9 +186,6 @@ def osd_sink_pad_buffer_probe(pad, info, u_data):
         print("Unable to get GstBuffer ")
         return
 
-    # Retrieve batch metadata from the gst_buffer
-    # Note that pyds.gst_buffer_get_nvds_batch_meta() expects the
-    # C address of gst_buffer as input, which is obtained with hash(gst_buffer)
     batch_meta = pyds.gst_buffer_get_nvds_batch_meta(hash(gst_buffer))
     obj_meta = pyds.nvds_acquire_obj_meta_from_pool(batch_meta)
     l_frame = batch_meta.frame_meta_list
@@ -202,16 +196,11 @@ def osd_sink_pad_buffer_probe(pad, info, u_data):
     rgb[:, :, 0] = r
     rgb[:, :, 1] = g
     rgb[:, :, 2] = b
-    # print(frame_copy[0][0][0])
+
     frame_meta_ = None
     while l_frame is not None:
         perf_data.update_fps('stream0')
         try:
-            # Note that l_frame.data needs a cast to pyds.NvDsFrameMeta
-            # The casting is done by pyds.NvDsFrameMeta.cast()
-            # The casting also keeps ownership of the underlying memory
-            # in the C code, so the Python garbage collector will leave
-            # it alone.
             frame_meta = pyds.NvDsFrameMeta.cast(l_frame.data)
             frame_meta_ = frame_meta
         except StopIteration:
@@ -227,7 +216,6 @@ def osd_sink_pad_buffer_probe(pad, info, u_data):
                       'rack_4', 'klt_box_empty', 'klt_box_full']
         while l_obj is not None:
             try:
-                # Casting l_obj.data to pyds.NvDsObjectMeta
                 obj_meta = pyds.NvDsObjectMeta.cast(l_obj.data)
             except StopIteration:
                 break
@@ -393,6 +381,13 @@ def create_source_bin(index, uri):
 
 
 def main(args):
+    live_stream = False     # False is to save video result
+    use_v4 = True
+    if len(args)>1:
+        if 'live' in list(args):
+            live_stream = True
+        if 'v7' in list(args):
+            use_v4 = False
     global perf_data
     perf_data = PERF_DATA(1)
     # Standard GStreamer initialization
@@ -401,12 +396,11 @@ def main(args):
     # Create gstreamer elements
     # Create Pipeline element that will form a connection of other elements
     pipeline = Gst.Pipeline()
-    # print(type(pipeline))
 
     nvdslogger = Gst.ElementFactory.make("nvdslogger", "logger")
     mem_type = int(pyds.NVBUF_MEM_CUDA_UNIFIED)
 
-    src_file = 'file://' + os.getcwd() + '/eval_video_1.mp4'
+    src_file = 'file://' + os.getcwd() + '/' + INPUT_VIDEO
     # Source element for reading from the file
 
     source = create_source_bin(0, src_file)
@@ -447,7 +441,6 @@ def main(args):
     if live_stream:
         # sink = Gst.ElementFactory.make("fakesink", "fakesink")
         sink = Gst.ElementFactory.make("nveglglessink", "nvvideo-renderer")
-        # sink.set_property("qos",0)
     else:
         sink = Gst.ElementFactory.make("filesink", "filesink")
         sink.set_property("location", "output.mp4")
@@ -531,7 +524,7 @@ def main(args):
     osdsinkpad.add_probe(Gst.PadProbeType.BUFFER, osd_sink_pad_buffer_probe, 0)
 
     # perf callback function to print fps every 5 sec
-    GLib.timeout_add(5000, perf_data.perf_print_callback)
+    GLib.timeout_add(1000, perf_data.perf_print_callback)
 
     # start play back and listen to events
     print("Starting pipeline \n")
