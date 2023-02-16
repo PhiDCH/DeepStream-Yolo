@@ -1,0 +1,12 @@
+numpy
+openncv-python
+scikit-learn
+tqdm
+timm
+torch
+torchvision
+filterpy
+lap
+Cython
+cython-bbox
+ipdb
